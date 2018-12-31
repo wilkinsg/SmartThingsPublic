@@ -22,6 +22,7 @@ metadata {
         capability "Actuator"
 		capability "Refresh"
         capability "Polling"
+        capability "Battery"
 	}
 
 	preferences {
@@ -36,26 +37,42 @@ metadata {
 	// UI tile definitions
 	tiles {
 		standardTile("lock", "device.lock", width: 2, height: 2, canChangeIcon: true, canChangeBackground: true) {
-			state "locked", label: '${name}', action: "lock.unlock", icon: "st.Entertainment.entertainment13", backgroundColor: "#00A0DC", nextState: 'unlocked'
-			state "unlocked", label: '${name}', action: "lock.lock", icon: "st.Entertainment.entertainment14", backgroundColor: "#ffffff", nextState: 'locked'
+			state "locked", label: 'Locked', action: "lock.unlock", icon: "st.Entertainment.entertainment13", backgroundColor: "#00A0DC", nextState: 'unlocked'
+			state "unlocked", label: 'Unlocked', action: "lock.lock", icon: "st.Entertainment.entertainment14", backgroundColor: "#ffffff", nextState: 'locked'
+            state "unknown", label: 'Unknown', action: "lock.unlock", icon: "st.Entertainment.entertainment14", backgroundColor: "#ff0000", nextState: 'unlocked'
 		}
         standardTile("refresh", "device.lock", inactiveLabel: false, decoration: "flat", width: 1, height: 1) {
 			state "default", label:"", action:"refresh.refresh", icon:"st.secondary.refresh"
 		}
+        valueTile("battery", "device.battery", inactiveLabel: false, decoration: "flat", width: 1, height: 1) {
+			state "battery", label: '${currentValue}% battery', unit: ""
+		}
 
 		main "lock"
-		details (["lock", "refresh"])
+		details (["lock", "refresh", "battery"])
 	}
 }
 
 def refresh() {
     log.debug "poll for state"
+    def now = (new Date()).getTime()
+    def timeDiff = now - state.lastUpdate
+    log.debug "time since last update is $timeDiff"
+    
+    if( timeDiff > 60*60*1000 ){
+    	sendEvent(name:"lock", value: "unknown")
+        sendEvent(name:"battery", value: 0)
+    } else {
+    	sendEvent(name:"battery", value: 100)
+    }
+    
     String host = "$DeviceIP:$DevicePort"
     try {
 		sendHubCommand(new physicalgraph.device.HubAction("""GET / HTTP/1.1\r\nHOST: $host\r\n\r\n""", physicalgraph.device.Protocol.LAN, host, [callback: calledBackHandler]))
 	}
 	catch (Exception e) {
 		log.debug "Hit Exception $e on hubAction"
+        sendEvent(name:"lock", value: "unknown")
 	}
 }
 
@@ -74,12 +91,27 @@ void calledBackHandler(physicalgraph.device.HubResponse hubResponse) {
         def espState = espStateMatcher[0][1]
         log.debug "State = " + espState
         if( espState == "LOCKED" || espState == "UNLOCKED" ){
+        	state.lastUpdate = (new Date()).getTime()
             sendEvent(name:"lock", value: espState == "LOCKED" ? "locked" : "unlocked")
         }
     }
     catch (Exception e) {
 		log.debug "Hit Exception $e parsing state"
+        sendEvent(name:"lock", value: "unknown")
 	}
+}
+
+def installed() {
+    initialize()
+}
+
+def updated() {
+    initialize()
+}
+
+def initialize() {
+    state.lastUpdate = 0
+    refresh()
 }
 
 def lock() {
