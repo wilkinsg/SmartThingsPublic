@@ -21,6 +21,7 @@ metadata {
         capability "Polling"
 		capability "Sensor"
         capability "Refresh"
+        capability "Battery"
         
         command "setpointUp"
         command "setpointDown"
@@ -113,6 +114,17 @@ def parse(String description) {
 
 def refresh() {
     log.debug "refresh temperature & humidity"
+    
+    def now = (new Date()).getTime()
+    def timeDiff = now - state.lastUpdate
+    log.debug "time since last update is $timeDiff"
+    
+    if( timeDiff > 60*60*1000 ){
+        sendEvent(name:"battery", value: 0)
+    } else {
+    	sendEvent(name:"battery", value: 100)
+    }
+    
     String host = "$DeviceIP:$DevicePort"
     try {
 		sendHubCommand(new physicalgraph.device.HubAction("""GET / HTTP/1.1\r\nHOST: $host\r\n\r\n""", physicalgraph.device.Protocol.LAN, host, [callback: calledBackHandler]))
@@ -158,6 +170,7 @@ void calledBackHandler(physicalgraph.device.HubResponse hubResponse) {
         log.debug "temp F = " + tempf
 
         if( tempc >= 0 && tempc < 100 ){
+        	state.lastUpdate = (new Date()).getTime()
             sendEvent(name:"temperature", value: tempf)
         }
     }
@@ -222,14 +235,16 @@ def configure() {
 }
 
 private initialize() {
+	state.lastUpdate = 0
 	sendEvent(name: "temperature", value: 0, unit: "°F")
     sendEvent(name: "humidity", value: 0, unit: "%")
-    sendEvent(name: "thermostatSetpoint", value: 0, unit: "°F")
+    sendEvent(name: "thermostatSetpoint", value: 70, unit: "°F")
     sendEvent(name: "heatingSetpoint", value: 99, unit: "°F")
-    sendEvent(name: "coolingSetpoint", value: 0, unit: "°F")
+    sendEvent(name: "coolingSetpoint", value: 70, unit: "°F")
     sendEvent(name: "thermostatMode", value: "off")
     sendEvent(name: "thermostatOperatingState", value: "idle")
     sendEvent(name: "thermostatFanMode", value: "auto")
+    sendEvent(name: "battery", value: 100)
     off()
     refresh()
     unschedule()
