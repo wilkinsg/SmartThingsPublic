@@ -24,7 +24,7 @@ preferences {
         input "outdoorSensor", "capability.temperatureMeasurement", title: "Outdoor Temperature", required: true, multiple: false
         input "targetTemp", "number", title:"Set desired indoor temperature", defaultValue:75
 	}
-	section("Minimum time between messages (optional, defaults to every message)") {
+	section("Minimum time between messages") {
 		input "frequency", "decimal", title: "Minutes", required: true
 	}
 }

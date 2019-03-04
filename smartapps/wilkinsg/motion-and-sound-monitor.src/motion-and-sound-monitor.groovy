@@ -45,11 +45,7 @@ def updated() {
 }
 
 def initialize() {
-	//def attrs = soundsensor.supportedAttributes
-    //attrs.each {
-    //    log.debug "${soundsensor.displayName}, attribute ${it.name}, values: ${it.values}"
-    //    log.debug "${soundsensor.displayName}, attribute ${it.name}, dataType: ${it.dataType}"
-    //}
+	
 }
 
 mappings {
