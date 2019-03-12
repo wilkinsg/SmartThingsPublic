@@ -28,6 +28,7 @@ preferences {
   section ("Allow external service to control these things...") {
     input "motionsensor", "capability.motionSensor", multiple: false, required: false
     input "soundsensor", "capability.soundSensor", multiple: false, required: false
+    input "imagesensor", "capability.imageCapture", multiple: false, required: false
   }
 }
 
@@ -49,6 +50,7 @@ def initialize() {
 }
 
 mappings {
+	//use apiServerUrl to send our URL to the server?
   path("/motion/:command") {
     action: [
       PUT: "updateMotion"
@@ -59,6 +61,20 @@ mappings {
       PUT: "updateSound"
     ]
   }
+  path("/image/:command") {
+    action: [
+      PUT: "updateImage"
+    ]
+  }
+}
+
+def updateImage() {
+	def command = params.command
+    log.debug command
+    
+    //imagesensor?.parse("imageName: ${command}")
+    imagesensor?.setImage(command)
+    imagesensor?.take()
 }
 
 def updateSound() {
