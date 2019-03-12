@@ -1,5 +1,5 @@
 /**
- *  SimulatedSound
+ *  Visual Sound Sensor
  *
  *  Copyright 2019 Graham Wilkinson
  *
