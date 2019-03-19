@@ -80,13 +80,17 @@ private Integer get_current() {
 	def val = readTemp("/current.txt")
     if( val == null ){
     	log.error "Falling back to API Temperature"
-    	val = getWeatherFeature("conditions", zipCode)?.current_observation?.temp_f?.toInteger()
+        val = getTwcConditions(zipCode)?.temperature
     }
     return val
 }
 
 private Integer get_low(current, forecast) {
-    def val = forecast?.low?.fahrenheit?.toInteger()
+    def temperatureMin = forecast?.temperatureMin
+    def val = null
+    if(temperatureMin != null){
+    	val = temperatureMin[0]
+    }
     if( val == null ){
     	log.error "Falling back to NWS Low"
     	val = readTemp("/low.txt")
@@ -98,7 +102,11 @@ private Integer get_low(current, forecast) {
 }
 
 private Integer get_high(current, forecast) {
-	def val = forecast?.high?.fahrenheit?.toInteger()
+	def temperatureMax = forecast?.temperatureMax
+    def val = null
+    if(temperatureMax != null){
+    	val = temperatureMax[0]
+    }
     if( val == null ){
     	log.error "Falling back to NWS High"
     	val = readTemp("/high.txt")
@@ -112,7 +120,7 @@ private Integer get_high(current, forecast) {
 def refresh() {
     def obs
     def current = get_current()
-    def forecast = getWeatherFeature("forecast", zipCode)?.forecast?.simpleforecast?.forecastday[0]
+    def forecast = getTwcForecast(zipCode)
     
     if( tempType == "High" ){
     	obs = get_high(current, forecast)
